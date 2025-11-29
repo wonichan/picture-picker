@@ -1,6 +1,7 @@
 # picture_picker
 
 A new Flutter project.
+图片分类
 
 ## Getting Started
 
