@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:transparent_image/transparent_image.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../models/image_file_info.dart';
 import '../providers/image_picker_provider.dart';
@@ -156,7 +155,7 @@ class ImageGrid extends StatelessWidget {
   }
 }
 
-/// Individual grid item - displays full image without cropping
+/// Individual grid item with right-click context menu
 class _ImageGridItem extends StatelessWidget {
   final ImageFileInfo imageInfo;
   final bool isSelected;
@@ -172,6 +171,10 @@ class _ImageGridItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onSecondaryTapDown: (details) {
+        // Show context menu on right-click
+        _showContextMenu(context, details.globalPosition);
+      },
       child: Container(
         decoration: BoxDecoration(
           border: Border.all(
@@ -257,5 +260,58 @@ class _ImageGridItem extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Show context menu on right-click
+  void _showContextMenu(BuildContext context, Offset position) {
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx + 1,
+        position.dy + 1,
+      ),
+      items: [
+        PopupMenuItem(
+          child: const Row(
+            children: [
+              Icon(Icons.open_in_new, size: 18),
+              SizedBox(width: 8),
+              Text('Open File'),
+            ],
+          ),
+          onTap: () => _openFile(),
+        ),
+        PopupMenuItem(
+          child: const Row(
+            children: [
+              Icon(Icons.folder_open, size: 18),
+              SizedBox(width: 8),
+              Text('Show in Folder'),
+            ],
+          ),
+          onTap: () => _showInFolder(),
+        ),
+      ],
+    );
+  }
+
+  /// Open file with default program
+  void _openFile() async {
+    try {
+      await Process.run('cmd', ['/c', 'start', '', imageInfo.path]);
+    } catch (e) {
+      print('Failed to open file: $e');
+    }
+  }
+
+  /// Open file location in Explorer
+  void _showInFolder() async {
+    try {
+      await Process.run('explorer', ['/select,', imageInfo.path]);
+    } catch (e) {
+      print('Failed to show in folder: $e');
+    }
   }
 }
