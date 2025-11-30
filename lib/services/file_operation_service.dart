@@ -98,24 +98,28 @@ class FileOperationService {
     }
   }
 
-  /// Resolve file name collision by appending number
-  /// e.g., image.jpg -> image(1).jpg -> image(2).jpg
+  /// Resolve file name by adding timestamp suffix
+  /// e.g., image.jpg -> image_20251130_171639.jpg
   static String _resolveNameCollision(String targetPath) {
-    if (!File(targetPath).existsSync()) {
-      return targetPath;
-    }
-
     final dir = path.dirname(targetPath);
     final basename = path.basenameWithoutExtension(targetPath);
     final extension = path.extension(targetPath);
 
-    int counter = 1;
-    String newPath;
+    // Generate timestamp: YYYYMMDD_HHMMSS
+    final now = DateTime.now();
+    final timestamp =
+        '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_'
+        '${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
 
-    do {
-      newPath = path.join(dir, '$basename($counter)$extension');
-      counter++;
-    } while (File(newPath).existsSync());
+    // Build new filename with timestamp
+    final newPath = path.join(dir, '${basename}_$timestamp$extension');
+
+    // If timestamp collision (extremely rare), add milliseconds
+    if (File(newPath).existsSync()) {
+      final timestampWithMs =
+          '${timestamp}_${now.millisecond.toString().padLeft(3, '0')}';
+      return path.join(dir, '${basename}_$timestampWithMs$extension');
+    }
 
     return newPath;
   }
