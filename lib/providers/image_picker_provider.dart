@@ -142,6 +142,14 @@ class ImagePickerProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Remove image from list (e.g., after deletion)
+  void removeImage(ImageFileInfo image) {
+    _images.remove(image);
+    _selectedImages.remove(image);
+    _totalImagesFound = _images.length;
+    notifyListeners();
+  }
+
   /// Set grid column count (1-4 columns)
   void setGridColumnCount(int count) {
     _gridColumnCount = count.clamp(1, 4);

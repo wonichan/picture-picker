@@ -272,7 +272,7 @@ class _ImageGridItem extends StatelessWidget {
         position.dx + 1,
         position.dy + 1,
       ),
-      items: [
+      items: <PopupMenuEntry>[
         PopupMenuItem(
           child: const Row(
             children: [
@@ -293,6 +293,17 @@ class _ImageGridItem extends StatelessWidget {
           ),
           onTap: () => _showInFolder(),
         ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          child: const Row(
+            children: [
+              Icon(Icons.delete_outline, size: 18, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Delete File', style: TextStyle(color: Colors.red)),
+            ],
+          ),
+          onTap: () => _deleteFile(context),
+        ),
       ],
     );
   }
@@ -312,6 +323,64 @@ class _ImageGridItem extends StatelessWidget {
       await Process.run('explorer', ['/select,', imageInfo.path]);
     } catch (e) {
       print('Failed to show in folder: $e');
+    }
+  }
+
+  /// Delete file with confirmation
+  void _deleteFile(BuildContext context) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete File'),
+        content: Text(
+          'Are you sure you want to delete this file?\n\n${imageInfo.name}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        // Delete the file
+        await imageInfo.file.delete();
+
+        // Remove from provider's list
+        if (context.mounted) {
+          final provider = Provider.of<ImagePickerProvider>(
+            context,
+            listen: false,
+          );
+          provider.removeImage(imageInfo);
+        }
+      } catch (e) {
+        // Show error dialog
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Delete Failed'),
+              content: Text('Failed to delete file:\n$e'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
     }
   }
 }
